@@ -26,6 +26,7 @@ class Miner(BaseGameEntity):
         self.location = location_type.goldMine
         self.goldCarried = 0
         self.moneyInBank = 0
+        self.depositedInBank = 0
         self.thirst = 0
         self.fatigue = 0
 
@@ -41,10 +42,19 @@ class Miner(BaseGameEntity):
     def changeLocation(self, newLocation):
         self.location = newLocation
 
+    def increaseFatigue(self):
+        if(self.goldCarried >= 3):
+            self.fatigue += 1
+
 
 
 class State:
-    pass
+    def Enter(self, character):
+        pass
+    def Execute(self, character):
+        pass
+    def Exit(self, character):
+        pass
 
 class EnterMineAndDigForNugget(State):
     def Enter(self, character):
@@ -53,7 +63,7 @@ class EnterMineAndDigForNugget(State):
             character.changeLocation(location_type.goldMine)
     def Execute(self, character):
         character.goldCarried += 1
-        character.fatigue += 1
+        character.increaseFatigue()
         print("Pickin' up a nugget")
         if(character.goldCarried >= 3):
             character.changeState(VisitBankAndDepositGold)
@@ -64,23 +74,55 @@ class EnterMineAndDigForNugget(State):
 
 class VisitBankAndDepositGold(State):
     def Enter(self, character):
-        pass
+        if(character.location != location_type.bank):
+            print("Goin' to the bank. Yes siree")
+            character.changeLocation(location_type.bank)
     def Execute(self, character):
-        pass
+        character.moneyInBank += 1
+        character.depositedInBank += 1
+        character.goldCarried = 0
+        print("Depositin' gold. Total savings now:", character.moneyInBank)
+        if(character.depositedInBank >= 5):
+            print("Woohoo! Rich enough for now. Back home to mah li'l lady")
+            character.depositedInBank = 0
+            character.changeState(GoHomeAndSleepTilRested)
+        else:
+            character.changeState(EnterMineAndDigForNugget)
     def Exit(self, character):
-        pass
+        print("Leavin' the bank")
 
 class QuenchThirst(State):
+    def Enter(self, character):
+        if(character.location != location_type.saloon):
+            print("Boy, ah sure is thusty! Walkin' to the saloon")
+            character.changeLocation(location_type.saloon)
     def Execute(self, character):
-        pass
+        character.thirst = 0
+        print("That's mighty fine sippin' liqour")
+        character.changeState(EnterMineAndDigForNugget)
+    def Exit(self, character):
+        print("Leavin' the saloon, feelin' good")
 
 class GoHomeAndSleepTilRested(State):
+    def Enter(self, character):
+        if(character.location != location_type.homeSweetHome):
+            print("Walkin' home")
+            character.changeLocation(location_type.homeSweetHome)
     def Execute(self, character):
-        pass
+        character.fatigue -= 1
+        character.thirst = 0
+        print("ZZZZ...")
+        if(character.fatigue <= 0):
+            print("What a God-darn fantastic nap! Time to find more gold")
+            character.changeState(EnterMineAndDigForNugget)
+    def Exit(self, character):
+        print("Leavin' home")
 
 #run()
 miner1 = Miner(0)
 i = 0
-while(i < 6):
+while(i < 39):
     i += 1
     miner1.update()
+
+#läs hur man gör global states
