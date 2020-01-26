@@ -9,11 +9,11 @@ class location_type(enum.Enum):
     homeSweetHome = 4
     can = 5
 
-
-
 class message_type(enum.Enum):
     Msg_HiHoneyImHome = 1
     Msg_StewReady = 2
+
+
 
 class Telegram:
     def __init__(self, senderEntity, recieverEntity, msg, extraInfo):
@@ -24,17 +24,16 @@ class Telegram:
 
 class MessageDispatcher:
     def dispatchMessage(self, telegram):
-        #TODO: find object based on ID
-
-
-        telegram.recieverEntity.handleMessage(telegram.msg)
+        self.reciever = EntityManager.entityList[telegram.recieverEntity]
+        self.reciever.handleMessage(telegram)
         
 
 
-
-
-
-
+class EntityManager:
+    entityList = []
+    def registerEntity(self, entity):
+        self.entityList.append(entity)
+            
 class BaseGameEntity:
     nextValidID = 0
     def __init__(self, id):
@@ -73,6 +72,11 @@ class Miner(BaseGameEntity):
         self.thirst += 1
         self.currentState.Execute(self)
 
+    def handleMessage(self, msg):
+        if(msg.msg == message_type.Msg_StewReady):
+            print("Okay hun, ahm a-comin'!")
+            #byt tillfälligt till EatStew
+
 class HouseWife(BaseGameEntity):
     def __init__(self, ID):
         BaseGameEntity.__init__(self, ID)
@@ -86,10 +90,9 @@ class HouseWife(BaseGameEntity):
     def handleMessage(self, msg):
         if(msg.msg == message_type.Msg_HiHoneyImHome):
             print("Hi honey. Let me make you some of mah fine country stew")
+            self.changeState(CookStew)
         
-
-
-
+        
 
 class State:
     def Enter(self, character):
@@ -154,7 +157,7 @@ class GoHomeAndSleepTilRested(State):
             print("Walkin' home")
             character.changeLocation(location_type.homeSweetHome)
             dispatcher = MessageDispatcher()
-            telegram = Telegram(character, 2, message_type.Msg_HiHoneyImHome, None)
+            telegram = Telegram(0, 1, message_type.Msg_HiHoneyImHome, None)
             dispatcher.dispatchMessage(telegram)
     def Execute(self, character):
         character.fatigue -= 3
@@ -191,9 +194,33 @@ class FeelCallOfNature(State):
     def Exit(self, character):
         print("Leavin' the john")
 
+class CookStew(State):
+    def Enter(self, character):
+        print("Puttin' the stew in the oven")
+    def Execute(self, character):
+        dispatcher = MessageDispatcher()
+        print("Stew ready! Let's eat!")
+        dispatcher.dispatchMessage(Telegram(character.ID, 0, message_type.Msg_StewReady, None))
+        character.changeState(CleanHouse)
+        pass
+    def Exit(self, character):
+        pass
+
+class EatStew(State):
+    def Enter(self, character):
+        print("Smells reaaal goood, Elsa!")
+    def Execute(self, character):
+        print("Tastes real good too!")
+        #TODO: gå tillbaka till föregående state utan att: använda changeState -> utöva Enter igen
+    def Exit(self, character):
+        print("Thank ya li'l lady. Ah better get back to whatever ah wuz doin'")
+
 #run()
 miner1 = Miner(0)
+entityManager = EntityManager()
+entityManager.registerEntity(miner1)
 wife1 = HouseWife(1)
+entityManager.registerEntity(wife1)
 
 i = 0
 while(i < 39):
