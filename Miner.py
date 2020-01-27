@@ -75,7 +75,7 @@ class Miner(BaseGameEntity):
     def handleMessage(self, msg):
         if(msg.msg == message_type.Msg_StewReady):
             print("Okay hun, ahm a-comin'!")
-            #byt tillfälligt till EatStew
+            self.changeState(EatStew)
 
 class HouseWife(BaseGameEntity):
     def __init__(self, ID):
@@ -168,7 +168,7 @@ class GoHomeAndSleepTilRested(State):
         else:
             print("ZZZZ...")
     def Exit(self, character):
-        print("Leavin' home")
+        pass
 
 class CleanHouse(State):
     def Enter(self, character):
@@ -211,7 +211,7 @@ class EatStew(State):
         print("Smells reaaal goood, Elsa!")
     def Execute(self, character):
         print("Tastes real good too!")
-        #TODO: gå tillbaka till föregående state utan att: använda changeState -> utöva Enter igen
+        character.changeState(GoHomeAndSleepTilRested)
     def Exit(self, character):
         print("Thank ya li'l lady. Ah better get back to whatever ah wuz doin'")
 
@@ -223,7 +223,7 @@ wife1 = HouseWife(1)
 entityManager.registerEntity(wife1)
 
 i = 0
-while(i < 39):
+while(i < 25):
     time.sleep(1)
 
     i += 1
