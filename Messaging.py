@@ -2,11 +2,10 @@ import EntityManager
 
 
 class Telegram:
-    def __init__(self, senderEntity, recieverEntity, msg, extraInfo):
+    def __init__(self, senderEntity, recieverEntity, msg, time, location):
         self.senderEntity = senderEntity
         self.recieverEntity = recieverEntity
         self.msg = msg
-        self.extraInfo = extraInfo
 
 class MessageDispatcher:
     def dispatchMessage(self, telegram):
