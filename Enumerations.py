@@ -1,4 +1,5 @@
 import enum
+import random
 
 class location_type(enum.Enum):
     home = 1
@@ -9,5 +10,5 @@ class location_type(enum.Enum):
     bar = 6
 
 class message_type(enum.Enum):
-    msg_meetUp = 1
-    msg_tooHungry = 2
+    msg_SMS = 1
+    msg_meetUp = 2
