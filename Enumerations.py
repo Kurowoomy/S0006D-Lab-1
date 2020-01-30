@@ -12,3 +12,4 @@ class location_type(enum.Enum):
 class message_type(enum.Enum):
     msg_SMS = 1
     msg_meetUp = 2
+    msg_cantCome = 3

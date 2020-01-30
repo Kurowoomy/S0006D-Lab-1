@@ -18,14 +18,20 @@ class MessageDispatcher:
 
     def dispatchMessage(self, meetupTime, senderEntity, recieverEntity, msg, extraInfo):
         telegram = Telegram(senderEntity, recieverEntity, msg, meetupTime, extraInfo)
-        if(TimeManager.TimeManager.currentTime == meetupTime or msg == Enumerations.message_type.msg_SMS):
+        if(TimeManager.TimeManager.currentTime == meetupTime or msg == Enumerations.message_type.msg_SMS or msg == Enumerations.message_type.msg_cantCome):
             recieverEntity.handleMessage(telegram)
         else:
             MessageDispatcher.priorityQ.append(telegram)
     def dispatchDelayedMessages(self):
-        for telegram in MessageDispatcher.priorityQ:
-            if(telegram.dispatchTime == TimeManager.TimeManager.currentTime):
-                telegram.recieverEntity.handleMessage(telegram)
+        self.amount = len(MessageDispatcher.priorityQ) - 1
+        while(self.amount >= 0):
+            if(MessageDispatcher.priorityQ[self.amount].dispatchTime == TimeManager.TimeManager.currentTime):
+                MessageDispatcher.priorityQ[self.amount].recieverEntity.handleMessage(MessageDispatcher.priorityQ[self.amount])
+                MessageDispatcher.priorityQ.remove(MessageDispatcher.priorityQ[self.amount])
+            self.amount -= 1
+        
+                
+        
 
     def decideMeetupTime(self):
         return random.randint(6, 23)

@@ -19,6 +19,7 @@ class StateMachine:
         if(self.owner.alive):
             if(self.globalState):
                 self.globalState.execute(self.owner)
+                print("")
         if(self.currentState):
             self.currentState.execute(self.owner)
 
