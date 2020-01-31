@@ -43,11 +43,12 @@ class Working(State):
 
 #gör som studentglobalstate
 class WorkerGlobalState(State):
-    meetupLocation = None
     def onMessage(self, character, telegram):
         dispatcher = Messaging.MessageDispatcher()
         if(not character.alive):
             print(character.name, ": Dead.")
+            if(TimeManager.TimeManager.currentTime in character.appointments):
+                character.appointments.pop(TimeManager.TimeManager.currentTime)
             for entity in EntityManager.EntityManager.entityList:
                 if(character.stateMachine.occupation == entity.stateMachine.occupation and EntityManager.EntityManager.workers > 1):
                     if(entity == character):
@@ -57,18 +58,18 @@ class WorkerGlobalState(State):
                         dispatcher.dispatchMessage(None, character, entity, Enumerations.message_type.msg_cantCome, None)
             return False
         elif(telegram.msg == Enumerations.message_type.msg_SMS):
-            character.willMeetUp = True
             print(character.name, ": Checking SMS")
-            dispatcher = Messaging.MessageDispatcher()
             dispatcher.dispatchMessage(telegram.dispatchTime, character, character, Enumerations.message_type.msg_meetUp, telegram.extraInfo)
-            character.participants = EntityManager.EntityManager.workers
+            if(telegram.dispatchTime in character.appointments):
+                character.appointments[telegram.dispatchTime] += 1
+            else:
+                character.appointments[telegram.dispatchTime] = EntityManager.EntityManager.workers
             return True
         elif(telegram.msg == Enumerations.message_type.msg_meetUp):
             print(character.name, ": Time to socialize")
-            if(character.hunger >= 14):
+            if(character.hunger >= 10):
                 print(character.name, ": Too hungry to go")
-                character.participants = 0
-                character.willMeetUp = False
+                character.appointments.pop(TimeManager.TimeManager.currentTime)
                 for entity in EntityManager.EntityManager.entityList:
                     if(character.stateMachine.occupation == entity.stateMachine.occupation and EntityManager.EntityManager.workers > 1):
                         if(entity == character):
@@ -82,10 +83,11 @@ class WorkerGlobalState(State):
             return True
         elif(telegram.msg == Enumerations.message_type.msg_cantCome):
             print(character.name, ": It seems", telegram.senderEntity.name, "can't come")
-            character.participants -= 1
+            character.appointments[TimeManager.TimeManager.currentTime] -= 1
             return True
         return False
     def execute(self, character):
+        dispatcher = Messaging.MessageDispatcher()
         if(character.hunger >= 24):
             print(character.name, ": Died of hunger")
             character.alive = False
@@ -99,44 +101,47 @@ class WorkerGlobalState(State):
                 State.execute(self, character)
             else:
                 character.stateMachine.changeState(Sleeping)
-        elif(TimeManager.TimeManager.currentTime == 0 and not character.sleeping):
+        elif((TimeManager.TimeManager.currentTime >= 0 and TimeManager.TimeManager.currentTime <= 5) and not character.sleeping):
             print(character.name, ": Time to sleep")
             if(character.isSocializing):
                 State.execute(self, character)
             else:
                 character.stateMachine.changeState(Sleeping)
-        elif(character.socialNeeds >= 12 and not character.willMeetUp):
+        elif(character.socialNeeds >= 12 and len(character.appointments) <= 0):
             print(character.name, ": Feeling lonely")
             dispatcher = Messaging.MessageDispatcher()
             meetupTime = dispatcher.decideMeetupTime()
-            meetupLocation = dispatcher.decideMeetupLocation()
+            self.meetupLocation = dispatcher.decideMeetupLocation(character.stateMachine.occupation)
+            if(TimeManager.TimeManager.currentTime in character.appointments):
+                character.appointments[meetupTime] += 1
+            else:
+                character.appointments[meetupTime] = 1
             for entity in EntityManager.EntityManager.entityList:
                 if(character.stateMachine.occupation == entity.stateMachine.occupation and EntityManager.EntityManager.workers > 1):
                     if(entity == character):
-                        dispatcher.dispatchMessage(meetupTime, character, character, Enumerations.message_type.msg_meetUp, meetupLocation)
-                        character.participants += 1
+                        dispatcher.dispatchMessage(meetupTime, character, character, Enumerations.message_type.msg_meetUp, self.meetupLocation)
                     else:
                         print(character.name, ": Sending SMS to", entity.name)
-                        character.willMeetUp = True
-                        dispatcher.dispatchMessage(meetupTime, character, entity, Enumerations.message_type.msg_SMS, meetupLocation)
-                        character.participants += 1
+                        dispatcher.dispatchMessage(meetupTime, character, entity, Enumerations.message_type.msg_SMS, self.meetupLocation)
+                        character.appointments[meetupTime] += 1
         elif(character.isSocializing):
-            if(character.participants <= 1):
-                print(character.name, ": No one is free :(")
-                character.willMeetUp = False
-                character.participants = 0
-                character.isSocializing = False
-            else:
-                self.checkLocationChangeState(character, self.meetupLocation)
-                socialState = Socializing()
-                socialState.execute(character)
+            if(TimeManager.TimeManager.currentTime in character.appointments):
+                if(character.appointments[TimeManager.TimeManager.currentTime] <= 1):
+                    print(character.name, ": No one is free :(")
+                    character.appointments.pop(TimeManager.TimeManager.currentTime)
+                    character.isSocializing = False
+                else:
+                    self.checkLocationChangeState(character, self.meetupLocation)
+                    socialState = Socializing()
+                    socialState.execute(character)
 
 class StudentGlobalState(State):
-    meetupLocation = None
     def onMessage(self, character, telegram):
         dispatcher = Messaging.MessageDispatcher()
         if(not character.alive):
             print(character.name, ": Dead.")
+            if(TimeManager.TimeManager.currentTime in character.appointments):
+                character.appointments.pop(TimeManager.TimeManager.currentTime)
             for entity in EntityManager.EntityManager.entityList:
                 if(character.stateMachine.occupation == entity.stateMachine.occupation and EntityManager.EntityManager.students > 1):
                     if(entity == character):
@@ -146,19 +151,18 @@ class StudentGlobalState(State):
                         dispatcher.dispatchMessage(None, character, entity, Enumerations.message_type.msg_cantCome, None)
             return False
         elif(telegram.msg == Enumerations.message_type.msg_SMS):
-            
             print(character.name, ": Checking SMS")
             dispatcher.dispatchMessage(telegram.dispatchTime, character, character, Enumerations.message_type.msg_meetUp, telegram.extraInfo)
-            if(not character.willMeetUp):
-                character.participants = EntityManager.EntityManager.students
-                character.willMeetUp = True
+            if(telegram.dispatchTime in character.appointments):
+                character.appointments[telegram.dispatchTime] += 1
+            else:
+                character.appointments[telegram.dispatchTime] = EntityManager.EntityManager.students
             return True
         elif(telegram.msg == Enumerations.message_type.msg_meetUp):
             print(character.name, ": Time to socialize")
-            if(character.hunger >= 14):
+            if(character.hunger >= 10):
                 print(character.name, ": Too hungry to go")
-                character.participants = 0
-                character.willMeetUp = False
+                character.appointments.pop(TimeManager.TimeManager.currentTime)
                 for entity in EntityManager.EntityManager.entityList:
                     if(character.stateMachine.occupation == entity.stateMachine.occupation and EntityManager.EntityManager.students > 1):
                         if(entity == character):
@@ -172,7 +176,7 @@ class StudentGlobalState(State):
             return True
         elif(telegram.msg == Enumerations.message_type.msg_cantCome):
             print(character.name, ": It seems", telegram.senderEntity.name, "can't come")
-            character.participants -= 1
+            character.appointments[TimeManager.TimeManager.currentTime] -= 1
             return True
         return False
     def execute(self, character):
@@ -190,37 +194,39 @@ class StudentGlobalState(State):
                 State.execute(self, character)
             else:
                 character.stateMachine.changeState(Sleeping)
-        elif((TimeManager.TimeManager.currentTime >= 0 and TimeManager.TimeManager.currentTime <= 7) and not character.sleeping):
+        elif((TimeManager.TimeManager.currentTime >= 0 and TimeManager.TimeManager.currentTime <= 5) and not character.sleeping):
             print(character.name, ": Time to sleep")
             if(character.isSocializing):
                 State.execute(self, character)
             else:
                 character.stateMachine.changeState(Sleeping)
-        elif(character.socialNeeds >= 12 and not character.willMeetUp):
+        elif(character.socialNeeds >= 12 and len(character.appointments) <= 0):
             print(character.name, ": Feeling lonely")
             dispatcher = Messaging.MessageDispatcher()
             meetupTime = dispatcher.decideMeetupTime()
-            meetupLocation = dispatcher.decideMeetupLocation()
+            self.meetupLocation = dispatcher.decideMeetupLocation(character.stateMachine.occupation)
+            if(TimeManager.TimeManager.currentTime in character.appointments):
+                character.appointments[meetupTime] += 1
+            else:
+                character.appointments[meetupTime] = 1
             for entity in EntityManager.EntityManager.entityList:
                 if(character.stateMachine.occupation == entity.stateMachine.occupation and EntityManager.EntityManager.students > 1):
                     if(entity == character):
-                        dispatcher.dispatchMessage(meetupTime, character, character, Enumerations.message_type.msg_meetUp, meetupLocation)
-                        character.participants += 1
+                        dispatcher.dispatchMessage(meetupTime, character, character, Enumerations.message_type.msg_meetUp, self.meetupLocation)
                     else:
                         print(character.name, ": Sending SMS to", entity.name)
-                        character.willMeetUp = True
-                        dispatcher.dispatchMessage(meetupTime, character, entity, Enumerations.message_type.msg_SMS, meetupLocation)
-                        character.participants += 1
+                        dispatcher.dispatchMessage(meetupTime, character, entity, Enumerations.message_type.msg_SMS, self.meetupLocation)
+                        character.appointments[meetupTime] += 1
         elif(character.isSocializing):
-            if(character.participants <= 1):
-                print(character.name, ": No one is free :(")
-                character.willMeetUp = False
-                character.participants = 0
-                character.isSocializing = False
-            else:
-                self.checkLocationChangeState(character, self.meetupLocation)
-                socialState = Socializing()
-                socialState.execute(character)
+            if(TimeManager.TimeManager.currentTime in character.appointments):
+                if(character.appointments[TimeManager.TimeManager.currentTime] <= 1):
+                    print(character.name, ": No one is free :(")
+                    character.appointments.pop(TimeManager.TimeManager.currentTime)
+                    character.isSocializing = False
+                else:
+                    self.checkLocationChangeState(character, self.meetupLocation)
+                    socialState = Socializing()
+                    socialState.execute(character)
 
 
 
@@ -230,7 +236,9 @@ class Socializing(State):
     def execute(self, character):
         print(character.name, ": Socializing!")
         character.socialNeeds = 0
-        character.willMeetUp = False
+        if(TimeManager.TimeManager.currentTime in character.appointments):
+            character.appointments.pop(TimeManager.TimeManager.currentTime)
+        ###character.willMeetUp = False
     def exit(self, character):
         pass
 
@@ -341,7 +349,6 @@ class Eating(State):
         character.hunger = 0
         character.fatigue += 1
         character.foodInventory -= 1
-        print(character.name, ": Full and returning to work")
         if(character.isSocializing):
             State.execute(self, character)
         else:

@@ -29,11 +29,16 @@ class MessageDispatcher:
                 MessageDispatcher.priorityQ[self.amount].recieverEntity.handleMessage(MessageDispatcher.priorityQ[self.amount])
                 MessageDispatcher.priorityQ.remove(MessageDispatcher.priorityQ[self.amount])
             self.amount -= 1
-        
-                
-        
 
     def decideMeetupTime(self):
         return random.randint(6, 23)
-    def decideMeetupLocation(self):
-        return random.choice(list(Enumerations.location_type))
+    def decideMeetupLocation(self, occupation):
+        location = random.choice(list(Enumerations.location_type))
+        while(location == Enumerations.location_type.home):
+            location = random.choice(list(Enumerations.location_type))
+        if(location == Enumerations.location_type.school or location == Enumerations.location_type.mines):
+            if(occupation == States.Studying):
+                location == Enumerations.location_type.school
+            elif(occupation == States.Mining):
+                location == Enumerations.location_type.mines
+        return location

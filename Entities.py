@@ -9,9 +9,8 @@ class BaseGameEntity:
         self.alive = True
         self.canShop = True
         self.sleeping = False
-        self.willMeetUp = False
         self.isSocializing = False
-        self.participants = 0
+        self.appointments = {} # (time, participants)
     def setID(self, ID):
         if(ID >= BaseGameEntity.nextValidID):
             BaseGameEntity.nextValidID += 1
