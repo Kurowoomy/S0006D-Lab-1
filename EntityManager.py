@@ -1,5 +1,6 @@
 import States
 
+#keeps track of all the students and workers in the game
 class EntityManager:
     entityList = []
     students = 0
@@ -10,8 +11,3 @@ class EntityManager:
             EntityManager.students += 1
         elif(entity.stateMachine.occupation == States.Mining):
             EntityManager.workers += 1
-    def findEntityThroughID(self, ID):
-        for x in self.entityList:
-            if(self.entityList[x].ID == ID):
-                return self.entityList[x]
-        print("Entity with ID", ID, "not found")

@@ -1,4 +1,5 @@
 import Enumerations
+import EntityManager
 import StateMachine
 import States
 
@@ -10,13 +11,16 @@ class BaseGameEntity:
         self.canShop = True
         self.sleeping = False
         self.isSocializing = False
-        self.appointments = {} # (time, participants)
+        self.isEating = False
+        self.appointments = {} # dictionary containing (time : participants)
     def setID(self, ID):
-        if(ID >= BaseGameEntity.nextValidID):
-            BaseGameEntity.nextValidID += 1
-            self.ID = id
-        else:
-            print("invalid ID")
+        for entity in EntityManager.EntityManager.entityList:
+            if(ID == entity.ID):
+                print("invalid ID")
+                return
+        BaseGameEntity.nextValidID += 1
+        self.ID = id
+            
     def changeLocation(self, newLocation):
         self.location = newLocation
     def checkIfEnoughMoney(self, money, amount):
@@ -35,7 +39,7 @@ class Student(BaseGameEntity):
         self.fatigue = fatigue
         self.hunger = hunger
         self.foodInventory = foodInventory
-        self.pencils = pencils
+        self.pencils = pencils #pencils don't do anything yet
         self.money = money
         self.drinkingNeeds = drinkingNeeds
         self.socialNeeds = socialNeeds
@@ -58,7 +62,7 @@ class Worker(BaseGameEntity):
         self.fatigue = fatigue
         self.hunger = hunger
         self.foodInventory = foodInventory
-        self.shovels = shovels
+        self.shovels = shovels #shovels don't do anything yet
         self.money = money
         self.drinkingNeeds = drinkingNeeds
         self.socialNeeds = socialNeeds
