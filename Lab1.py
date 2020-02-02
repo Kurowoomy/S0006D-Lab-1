@@ -21,9 +21,9 @@ EntityManager.EntityManager().registerEntity(memberOfSociety2)
 dispatcher = Messaging.MessageDispatcher() #for dispatching delayed messages each hour
 
 i = 0
-loops = 72
+loops = input("Enter how many hours will pass in game: ")
 print(loops, "hours will pass")
-while(i < loops):
+while(i < int(loops)):
     #1 hour per loop
     TimeManager.time.sleep(1)
     i += 1
@@ -48,3 +48,5 @@ while(i < loops):
     TimeManager.TimeManager.currentTime += 1
     if(TimeManager.TimeManager.currentTime >= 24):
         TimeManager.TimeManager.currentTime = 0
+
+input("Press enter to exit program ")
